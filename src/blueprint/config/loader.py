@@ -7,8 +7,8 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 from typing import Dict, Any, Tuple
 
-from flowplan.exceptions import ConfigError
-from flowplan.config.schema import SCHEMA
+from blueprint.exceptions import ConfigError
+from blueprint.config.schema import SCHEMA
 
 _VAR = re.compile(r"\$\{([^}]+)\}")
 APPEND_LIST_KEYS: set[Tuple[str, ...]] = {

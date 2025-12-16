@@ -2,8 +2,8 @@ import pandas as pd
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any
-from flowplan.config.validator import enforce_types, validate_frame
-from flowplan.ops.transforms import apply_pipeline
+from blueprint.config.validator import enforce_types, validate_frame
+from blueprint.ops.transforms import apply_pipeline
 
 log = logging.getLogger(__name__)
 

@@ -2,11 +2,11 @@ import pandas as pd
 import re
 import unicodedata
 from typing import Callable, Iterable, Dict, Any
-from flowplan.exceptions import TransformError
-from flowplan.utils import load_entrypoints
+from blueprint.exceptions import TransformError
+from blueprint.utils import load_entrypoints
 
 Transform = Callable[[pd.Series, dict], pd.Series]
-TRANSFORM_PLUGINS = load_entrypoints("flowplan.transforms")
+TRANSFORM_PLUGINS = load_entrypoints("blueprint.transforms")
 
 def _regex_replace(series: pd.Series, params: dict) -> pd.Series:
     pat = params.get("pattern")

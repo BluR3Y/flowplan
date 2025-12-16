@@ -3,14 +3,14 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-from flowplan.config.validator import enforce_types, validate_frame
-from flowplan.engine.expressions import eval_expr, build_mask
-from flowplan.ops.transforms import apply_pipeline
-from flowplan.ops.fuzzy import fuzzy_match_series
-from flowplan.ops.enrich import enrich_join
-from flowplan.core.pipeline import Pipeline
-from flowplan.core.models import Config
-from flowplan.exceptions import SourceError, ExprError
+from blueprint.config.validator import enforce_types, validate_frame
+from blueprint.engine.expressions import eval_expr, build_mask
+from blueprint.ops.transforms import apply_pipeline
+from blueprint.ops.fuzzy import fuzzy_match_series
+from blueprint.ops.enrich import enrich_join
+from blueprint.core.pipeline import Pipeline
+from blueprint.core.models import Config
+from blueprint.exceptions import SourceError, ExprError
 
 # -------------------------------------------------------------------------
 # 1. Schema Validation Tests

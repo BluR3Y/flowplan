@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
-from flowplan.engine.expressions import eval_expr, build_mask
-from flowplan.ops.transforms import apply_pipeline
-from flowplan.exceptions import ExportError
+from blueprint.engine.expressions import eval_expr, build_mask
+from blueprint.ops.transforms import apply_pipeline
+from blueprint.exceptions import ExportError
 
 log = logging.getLogger(__name__)
 

@@ -3,12 +3,12 @@ import numpy as np
 import logging
 from typing import Mapping, Optional, Union, Tuple, TypedDict, List, Literal, Any
 
-from flowplan.ops.fuzzy import fuzzy_match_series
-from flowplan.utils import load_entrypoints
+from blueprint.ops.fuzzy import fuzzy_match_series
+from blueprint.utils import load_entrypoints
 
 log = logging.getLogger(__name__)
 
-ENRICH_PLUGINS = load_entrypoints("flowplan.enrich")
+ENRICH_PLUGINS = load_entrypoints("blueprint.enrich")
 
 # --- Configuration TypedDicts ---
 

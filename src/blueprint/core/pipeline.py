@@ -4,12 +4,12 @@ import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
-from flowplan.core.models import Config
-from flowplan.io.adapters import get_adapter
-from flowplan.ops.enrich import enrich_join, ENRICH_PLUGINS
-from flowplan.engine.export import Exporter
-from flowplan.engine.compare import write_compare_workbook
-from flowplan.engine.expressions import build_mask
+from blueprint.core.models import Config
+from blueprint.io.adapters import get_adapter
+from blueprint.ops.enrich import enrich_join, ENRICH_PLUGINS
+from blueprint.engine.export import Exporter
+from blueprint.engine.compare import write_compare_workbook
+from blueprint.engine.expressions import build_mask
 
 log = logging.getLogger(__name__)
 

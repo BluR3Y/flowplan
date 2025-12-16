@@ -336,13 +336,13 @@ Extensions are registered using Python `entry_points` in `pyproject.toml`.
 ### Extending via `pyproject.toml`
 
 ```toml
-[project.entry-points."flowplan.transforms"]
+[project.entry-points."blueprint.transforms"]
 reverse_string = "my_company_pkg.utils:reverse_string"
 
-[project.entry-points."flowplan.expr_ops"]
+[project.entry-points."blueprint.expr_ops"]
 business_days = "my_company_pkg.dates:calc_business_days"
 
-[project.entry-points."flowplan.enrich"]
+[project.entry-points."blueprint.enrich"]
 ml_predict_category = "my_company_pkg.ml:predict"
 ```
 

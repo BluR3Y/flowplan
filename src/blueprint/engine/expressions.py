@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 from typing import Any, Union, List, Dict
-from flowplan.exceptions import ExprError
-from flowplan.utils import load_entrypoints
+from blueprint.exceptions import ExprError
+from blueprint.utils import load_entrypoints
 import operator
 
 # Load plugins for custom expression operators (UDFs)
-EXPR_OP_PLUGINS = load_entrypoints("flowplan.expr_ops")
+EXPR_OP_PLUGINS = load_entrypoints("blueprint.expr_ops")
 
 Node = Union[dict, list, int, float, str, bool, None]
 

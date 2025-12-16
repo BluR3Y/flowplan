@@ -1,7 +1,7 @@
 import pytest
 import json
 from jsonschema import validate, ValidationError
-from flowplan.config.schema import SCHEMA
+from blueprint.config.schema import SCHEMA
 
 # Helper to validate a dict against the schema
 def validate_config(data):

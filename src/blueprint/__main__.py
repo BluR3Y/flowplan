@@ -1,8 +1,8 @@
 import argparse
 import logging
-from flowplan.config.loader import load_config
-from flowplan.core.models import Config
-from flowplan.core.pipeline import Pipeline
+from blueprint.config.loader import load_config
+from blueprint.core.models import Config
+from blueprint.core.pipeline import Pipeline
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

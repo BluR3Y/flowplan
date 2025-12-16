@@ -26,7 +26,7 @@ dev = [
 ]
 
 [project.scripts]
-flowplan = "src.flowplan.__main__:main"
+blueprint = "src.blueprint.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

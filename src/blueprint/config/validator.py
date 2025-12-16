@@ -1,5 +1,5 @@
 import pandas as pd
-from flowplan.exceptions import SourceError
+from blueprint.exceptions import SourceError
 
 def _safe_bool(val):
     if pd.isna(val): return None
