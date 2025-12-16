@@ -1,0 +1,175 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Comprehensive template demonstrating all flowplan features",
+    "author": "Data Team"
+  },
+  "timezone": "America/New_York",
+  "output": "${DATA_OUTPUT_DIR}/reports",
+
+  "_comments": {
+    "note": "Keys starting with _ are ignored by the engine but useful for comments"
+  },
+
+  "schema": {
+    "aliases": {
+      "emp_id": { "type": "integer", "identifier": true },
+      "email": { "type": "string", "identifier": true },
+      "full_name": { "type": "string" },
+      "start_date": { "type": "date", "date": { "format": "%Y-%m-%d" } },
+      "salary": { "type": "number" },
+      "status": { "type": "string", "enum": ["Active", "On Leave", "Terminated"], "not_null": true },
+      "department": { "type": "string" }
+    }
+  },
+
+  "sources": [
+    {
+      "id": "hr_system_export",
+      "path": "data/hr_dump_2024.xlsx",
+      "tables": [
+        {
+          "name": "Employees",
+          "table_id": "raw_hr_employees",
+          "columns": {
+            "Employee ID": { "alias": "emp_id", "transforms": [{ "cast": { "to": "integer" } }] },
+            "Name": { "alias": "full_name", "transforms": [{ "titlecase": {} }, { "normalize": ["strip", "collapse_ws"] }] },
+            "Joined": { "alias": "start_date", "transforms": [{ "cast": { "to": "date", "format": "%m/%d/%Y" } }] },
+            "Current Salary": { "alias": "salary", "transforms": [{ "regex_replace": { "pattern": "[$,]", "repl": "" } }, { "cast": { "to": "number" } }] }
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy_access_db",
+      "path": "data/legacy.accdb",
+      "tables": [
+        {
+          "name": "tblStaff",
+          "table_id": "legacy_staff",
+          "columns": {
+            "StaffID": { "alias": "emp_id" },
+            "EmailAddr": { "alias": "email", "transforms": [{ "normalize": ["lower", "strip"] }] },
+            "DeptCode": { "alias": "department" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "lookup_data",
+      "data": [
+        {
+          "table_id": "dept_codes",
+          "orient": "records",
+          "rows": [
+            { "code": "IT", "name": "Information Technology" },
+            { "code": "HR", "name": "Human Resources" },
+            { "code": "FIN", "name": "Finance" }
+          ],
+          "columns": {
+            "code": { "alias": "dept_code" },
+            "name": { "alias": "dept_name" }
+          }
+        }
+      ]
+    }
+  ],
+
+  "compile": {
+    "targets": [
+      {
+        "name": "master_roster",
+        "mode": "union",
+        "inputs": ["raw_hr_employees", "legacy_staff"],
+        "dedupe_on": ["emp_id"],
+        "keep": "first",
+        "add_source": true,
+        "enrich": [
+          {
+            "from": "dept_codes",
+            "left_on": "department",
+            "right_on": "dept_code",
+            "add": { "department_full_name": "dept_name" },
+            "match": {
+              "strategy": ["exact", "normalized", "fuzzy"],
+              "fuzzy": { "scorer": "token_sort_ratio", "threshold": 85, "block": "first_char" },
+              "on_miss": "leave_null",
+              "audit": true
+            }
+          }
+        ],
+        "post_filter": {
+          "status": { "op": "in", "value": ["Active", "On Leave"] }
+        }
+      },
+      {
+        "name": "salary_analysis",
+        "mode": "merge",
+        "inputs": ["raw_hr_employees"],
+        "key": ["emp_id"],
+        "merge_rules": {
+          "salary": "first_non_null",
+          "full_name": { "strategy": "prefer_source", "prefer_source": "raw_hr_employees" }
+        }
+      },
+      {
+        "name": "roster_diff",
+        "mode": "diff",
+        "left": "raw_hr_employees",
+        "right": "legacy_staff",
+        "on": ["emp_id"],
+        "side": "symmetric_diff"
+      }
+    ]
+  },
+
+  "compare": {
+    "pairs": [
+      {
+        "left": "raw_hr_employees",
+        "right": "legacy_staff",
+        "on": ["emp_id"],
+        "compare_cols": ["email", "department"],
+        "save_name": "HR_vs_Legacy_Discrepancies"
+      }
+    ]
+  },
+
+  "export": {
+    "workbooks": [
+      {
+        "save_name": "Final_HR_Report",
+        "sheets": [
+          {
+            "name": "Active Roster",
+            "from": "master_roster",
+            "filter": {
+              "salary": { "op": ">", "value": 0 }
+            },
+            "columns": {
+              "ID": { "alias": "emp_id" },
+              "Full Name": { "alias": "full_name" },
+              "Department": { "alias": "department_full_name" },
+              "Tenure (Years)": {
+                "compute": [
+                  "round",
+                  ["div", ["datediff", "day", { "col": "start_date" }, "2024-01-01"], 365.25],
+                  1
+                ]
+              },
+              "Status Label": {
+                "compute": [
+                  "if",
+                  ["eq", { "col": "status" }, "Active"],
+                  "Current Employee",
+                  "Other"
+                ]
+              },
+              "Match Quality": { "alias": "department_match_score" }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
