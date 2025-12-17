@@ -13,14 +13,43 @@ log = logging.getLogger(__name__)
 
 
 class SheetManager(DocumentManager):
+    """
+    Extends DocumentManager with Excel-specific features
+    """
     def __init__(
         self,
         name: str,
-        df: pd.DataFrame,
+        data: DocumentManager.DataType,
         on_change: Optional[Callable[[], None]] = None
     ) -> None:
-        super().__init__(name, df, on_change)
+        # Init: Let DocumentManager create the DataFrame
+        super().__init__(name, data, on_change)
+
+        # Normalize: Ensure strict Pandas types.
+        # This converts generic 'objects' to proper types (e.g. string numbers to ints, lists of dates to Timestamps)
+        # errors='ignore' ensures we don't crash on truly messy data
+        self.df = self.df.convert_dtypes()
+
         self._annotations: List[Tuple[int, int, str, str]] = []
+
+    def to_excel_compatible_df(self) -> pd.DataFrame:
+        """
+        Specific method for Exporting.
+        Creates a copy of the data safe for OpenPyXL writing.
+        """
+        # copy to avoid modifying the working data
+        clean = self.df.copy()
+
+        # 1. Convert Timestamps to Python datetime (OpenPyXL requirement)
+        # Select datetime columns efficiently
+        for col in clean.select_dtypes(include=['datetime64']).columns:
+            clean[col] = np.array(clean[col].dt.to_pydatetime())
+            
+        # 2. Convert NaN/NaT to None (OpenPyXL requirement for empty cells)
+        # We cast to object because None is a Python object
+        clean = clean.astype(object).where(pd.notnull(clean), None)
+        
+        return clean
 
     # --------------------------- Annotations ---------------------------
     def add_annotation(

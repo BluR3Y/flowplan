@@ -162,13 +162,10 @@ class WorkbookManager(CollectionManager):
                 ws.delete_rows(1, ws.max_row)
         else:
             ws = self._wb.create_sheet(title=name)
-        
-        # Prepare data
-        df = sm.get_df()
 
         # Fast write using openpyxl utility
         # dataframe_to_rows is a generator; we iterate to append
-        rows = dataframe_to_rows(df, index=False, header=True)
+        rows = dataframe_to_rows(sm.to_excel_compatible_df(), index=False, header=True)
 
         for row in rows:
             ws.append(row)

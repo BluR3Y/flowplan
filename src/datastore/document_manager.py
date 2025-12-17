@@ -44,7 +44,6 @@ class DocumentManager:
             self._on_change()
     
     # --------------------------- Data Access ---------------------------
-    # Altered from original get_df fn
     def get_df(self) -> pd.DataFrame:
         """
         Return the internal DataFrame.
