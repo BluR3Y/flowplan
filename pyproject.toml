@@ -1,20 +1,18 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "flowplan"
+name = "batch_etl"
 version = "0.1.0"
-description = "Dataset manager for multi-source ingest, compile, compare, and export"
-readme = "README.md"
-authors = [{name="Rey Flores", email="reyhector1234@gmail.com"}]
-requires-python = ">=3.10"
+description = "A robust, modular Batch ETL library"
+requires-python = ">=3.9"
 dependencies = [
     "pandas>=2.0.0",
-    "numpy>=1.20.0",
-    "openpyxl>=3.1.0",
     "rapidfuzz>=3.0.0",
-    "jsonschema>=4.25.1"
+    "openpyxl>=3.1.0",
+    "jsonschema>=4.0.0",
+    "xlsxwriter>=3.0.0"
 ]
 
 [project.optional-dependencies]
@@ -26,7 +24,12 @@ dev = [
 ]
 
 [project.scripts]
-blueprint = "blueprint.__main__:main"
+etl-run = "batch_etl.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+# [project.entry-points."batch_etl.sources"]
+# excel_adapter = "batch_etl.sources.adapters.excel:ExcelAdapter"
+# access_adapter = "batch_etl.sources.adapters.access:AccessAdapter"
+# inline_adapter = "batch_etl.sources.adapters.inline:InlineAdapter"
+
+# [project.entry-points."batch_etl.transforms"]
+# Built-in transforms are registered internally, but external ones can go here
