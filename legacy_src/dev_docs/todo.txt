@@ -1,0 +1,3 @@
+Last Worked on DatabaseManager inheritance class for CollectionManager
+Last Reevaluate the need for datastore
+Last worked on profiling tool for files

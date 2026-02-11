@@ -1,0 +1,141 @@
+{
+    "version": "1.1",
+    "metadata": {
+        "description": "Pipeline configuration example demonstrating all core features"
+    },
+    "timezone": "America/New_York",
+    "output": "${FLOWPLAN_OUT}/flowplan_out",
+    "extract": [
+        {
+            // Example for excel data extraction
+            "source_id": "excel_1",
+            // File format is determined declaritively by the extension
+            "path": "C:/Data/grants_book.xlsx",
+            // Keys assigned to "data" object are mapped to data collection in source
+            // Which are uniquely handled by source adapters for extraction
+            "data": {
+                "Sheet1": {
+                    "dataset_id": "excel_1_sheet_1",
+                    // Properties of the data collection to carryover to the dataset
+                    "columns": [
+                        "grant_id",
+                        "Title",
+                        "submission_date",
+                        "Status"
+                    ]
+                },
+                "Sheet2": {
+                    "dataset_id": "excel_1_sheet_2",
+                    "columns": [
+                        "Grant_ID",
+                        "Project Title",
+                        "Submit",
+                        "grant status"
+                    ]
+                }
+            }
+        },
+        {
+            "source_id": "access_1",
+            "path": "C:/Data/my_db.accdb",
+            "data": {
+                "Table1": {
+                    "dataset_id": "access_1_table_1",
+                    "columns": [
+                        "Grant_ID",
+                        "Project_Title",
+                        "Award_No",
+                        "PI_Name",
+                        "StatusText",
+                        "Date_Submitted"
+                    ]
+                }
+            }
+        },
+        {
+            "source_id": "misc_data",
+            "path": "C:/Data/misc_data.json",
+            "data": {
+                "ActivityTypes": {
+                    "dataset_id": "activity_types",
+                    "columns": [
+                        "Name",
+                        "Code"
+                    ]
+                },
+                "Disciplines": {
+                    "dataset_id": "disciplines",
+                    "columns": [
+                        "Name",
+                        "Code"
+                    ]
+                }
+            }
+        }
+    ],
+    "transform": [
+        {
+            "task_id": "clean_grants",
+            "level": "element", // Micro-operation (cleansing)
+            "input": ["excel_1_sheet_1"],
+            "steps": [
+                { "op": "label", "apply": { "Grant ID": "grant_id", "Project_Title": "title", "Award_No": "award_number" } },
+                { "op": "map", "apply": { "status": { "Open": "Active", "Closed": "Inactive" }, "department": { "computer science": "comp_sci", "mathematics": "math", "phys ed": "gym" } } },
+                { "op": "regex_replace", "apply": { "grant_id": { "pattern": "^jjc-", "repl": "", "flags": "i" }, "grant_pln": { "pattern": "^jjc-", "repl": "", "flags": "i" } } },
+                { "op": "cast", "on_failure": "raise_error", "apply": { "grant_id": "integer", "grant_pln": "integer", "submission_date": "date" } },
+                { "op": "affix", "apply": { "grant_id": { "text": "-award", "position": "suffix" }, "grant_pln": { "text": "JJC-", "position": "prefix" } } },
+                { "op": "text_norm", "apply": { "title": ["nfkc", "strip", "upper"], "status": ["strip", "lower"] } }
+            ],
+            // "test": [
+            //     { "op": "cast", "on_failure": "raise_error", "apply": { "grant_id": "string", "grant_pln": { "to": "date", "fmt": "YYYY-DD-MM" } } },
+            //     { "op": "cast", "on_failure": "raise_error", "apply": [ { "col": "grant_id", "params": "string" }, { "col": "grant_pln", "params": { "to": "date", "fmt": "YYYY-DD-MM" } } ] }
+            // ]
+        },
+        {
+            "task_id": "order_grants",
+            "input": ["excel_1_sheet_2"],
+            "level": "set", // Macro-operations
+            "steps": [
+                { "op": "filter", "apply": { "AND": [ { "status": { "op": "==", "value": "Active" } }, { "grant_id": { "op": ">=", "value": 100 } } ] } },
+                { "op": "sort", "apply": { "grant_id": "asc", "grant_pln": "desc" } },
+                { "op": "dedupe", "apply": { "on": "grant_pln", "keep": "first" } },
+                { "op": "group", "apply": { "by": "grant_id" } }
+            ]
+        },
+        {
+            "task_id": "combine_grants",
+            "level": "collection",
+            "input": ["excel_1_sheet_1", "excel_1_sheet_2"],
+            "steps": [
+                { "op": "merge", "apply": { "left": "excel_1_sheet_1", "right": "excel_1_sheet_2", "how": "inner", "on": "grant_id" } },
+                { "op": "join", "apply": { "left": "excel_1_sheet_1", "right": "excel_1_sheet_2", "how": "left", "on": "grant_pln" } }
+            ]
+        }
+        // Additional transforms:
+        //  * Splitting/Merging (morph) columns
+        //  * Create/Drop columns
+        //  * Dedupe, enrich, error/null handle
+    ],
+    "load": {
+        "export": [
+            {
+                "path": "C:/Data/Export/export_excel_1.xlsx",
+                // "tables": {
+                //     "Grant - Excel View": {
+                //         "from": "excel_grants"
+                //     }
+                // }
+                "data": {
+                    "Grants - Excel View": {
+                        "target": "excel_grants",
+                        "columns": {
+                            "Grant Identifier": {
+
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}

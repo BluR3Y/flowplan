@@ -1,0 +1,28 @@
+{
+    "activity_types": [
+        {
+            "Name": "Applied Research on Campus",
+            "Code": 1
+        },
+        {
+            "Name": "Departmental Admininstration",
+            "Code": 2
+        },
+        {
+            "Name": "Equipment on Campus",
+            "Code": 3
+        }
+    ],
+    "disciplines": {
+        "Name": [
+            "Comp Sci",
+            "Math",
+            "Pol Sci"
+        ],
+        "Code": [
+            1,
+            2,
+            3
+        ]
+    }
+}

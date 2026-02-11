@@ -1,0 +1,5 @@
+version: 1.1
+metadata:
+  description: "Reference config for pipeline"
+timezone: "America/New_York"
+output: "${FLOWPLAN_OUT}/output"
