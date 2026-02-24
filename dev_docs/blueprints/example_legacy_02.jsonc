@@ -1,0 +1,155 @@
+{
+    "version": 1.1,
+    "metadata": {
+        "description": "Example pipeline configuration demonstrates all core features"
+    },
+    "timezone": "America/New_York",
+    "output": "${FLOWPLAN_OUT}/flowplan_out",
+    "resources": {  // Credentials
+        "excel_1_conn": {
+            "adapter": "excel",     // Resource is a 'collection'
+            "params": {
+                "path": "C:/Data/grants_book.xlsx"
+            },
+            "allow": ["read", "write"]
+        },
+        "json_1_conn": {
+            "adapter": "json",  // Resource is a 'set'
+            "params": {
+                "path": "C:/Data/misc_data.json"
+            }
+        },
+        "csv_1_conn": {
+            "adapter": "",  // Resource is a 'set'
+            "params": {
+                "path": "C:/Data/csv_data.csv"
+            }
+        }
+    },
+    "tasks": [
+        {
+            "task_id": "extract_excel_1_sheet_1",
+            "phase": "extract",
+            "resource": "excel_1_conn",
+            "configure": {
+                "collection": "Sheet1",
+                "keys": [
+                    "grant_id",
+                    "Title",
+                    "submission_date",
+                    "Status"
+                ]
+            }
+        },
+        {
+            "task_id": "extract_excel_1_sheet_2",
+            "phase": "extract",
+            "resource": "excel_1_conn",
+            "configure": {
+                "collection": "Sheet2",
+                "keys": [
+                    "Grant_ID",
+                    "Project Title",
+                    "Submit",
+                    "grant status"
+                ]
+            }
+        },
+        {
+            "task_id": "extract_access_1_table_1",
+            "phase": "extract",
+            "resource": "access_1_conn",
+            "configure": {
+                "collection": "Table1",
+                "keys": [
+                    "Grant_ID",
+                    "Project_Title",
+                    "Award_No",
+                    "PI_Name",
+                    "StatusText",
+                    "Date_Submitted"
+                ]
+            }
+        },
+        // {
+        //     "task_id": "extract_json_1_activity_types",
+        //     "phase": "extract",
+        //     "resource": "json_1_conn",
+        //     "configure": {
+        //         "collection": "ActivityTypes",
+        //         "keys": ["Name", "Code"]
+        //     }
+        // },
+        // {
+        //     "task_id": "extract_json_1_disciplines",
+        //     "phase": "extract",
+        //     "configure": {
+        //         "resource": "json_1_conn",
+        //         "collection": "Disciplines",
+        //         "keys": [
+        //             "Name",
+        //             "Code"
+        //         ]
+        //     }
+        // },
+        {
+            "task_id": "extract_json_1",
+            "phase": "extract",
+            "resource": "json_1_conn",
+            "configure": {
+                "keys": ["Name", "Code"]
+            }
+        },
+        {
+            "task_id": "clean_grants",
+            "phase": "transform",
+            "input": ["extract_excel_1_sheet_1"],
+            "configure": {
+                "level": "element", // Micro-operation (cleansing)
+                "steps": [
+                    { "op": "label", "apply": { "Grant ID": "grant_id", "Project_Title": "title", "Award_No": "award_number" } },
+                    { "op": "map", "apply": { "status": { "Open": "Active", "Closed": "Inactive" }, "department": { "computer science": "comp_sci", "mathematics": "math", "phys ed": "gym" } } },
+                    { "op": "regex_replace", "apply": { "grant_id": { "pattern": "^jjc-", "repl": "", "flags": "i" }, "grant_pln": { "pattern": "^jjc-", "repl": "", "flags": "i" } } },
+                    { "op": "cast", "on_failure": "raise_error", "apply": { "grant_id": "integer", "grant_pln": "integer", "submission_date": "date" } },
+                    { "op": "affix", "apply": { "grant_id": { "text": "-award", "position": "suffix" }, "grant_pln": { "text": "JJC-", "position": "prefix" } } },
+                    { "op": "text_norm", "apply": { "title": ["nfkc", "strip", "upper"], "status": ["strip", "lower"] } }
+                ]
+            }
+        },
+        {
+            "task_id": "order_grants",
+            "phase": "transform",
+            "input": ["extract_excel_1_sheet_2"],
+            "configure": {
+                "level": "set",  // Macro-operations
+                "steps": [
+                    { "op": "filter", "apply": { "AND": [ { "status": { "op": "==", "value": "Active" } }, { "grant_id": { "op": ">=", "value": 100 } } ] } },
+                    { "op": "sort", "apply": { "grant_id": "asc", "grant_pln": "desc" } },
+                    { "op": "dedupe", "apply": { "on": "grant_pln", "keep": "first" } },
+                    { "op": "group", "apply": { "by": "grant_id" } }
+                ]
+            }
+        },
+        {
+            "task_id": "combine_grants",
+            "phase": "transform",
+            "input": ["clean_grants", "order_grants"],
+            "configure": {
+                "level": "collection",
+                "steps": [
+                    { "op": "merge", "apply": { "left": "clean_grants", "right": "order_grants", "how": "inner", "on": "grant_id" } },
+                    { "op": "join", "apply": { "left": "clean_grants", "right": "order_grants", "how": "left", "on": "grant_pln" } }
+                ]
+            }
+        },
+        {
+            "task_id": "load_clean_grants",
+            "phase": "load",
+            "resource": "json_1_conn",
+            "input": "combine_grants",
+            "configure": {
+                "mode": "overwrite"
+            }
+        }
+    ]
+}

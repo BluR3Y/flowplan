@@ -1,12 +1,14 @@
+from ..pipeline_task import PipelineTask
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Type, Callable
 
-class TransformOperation:
-    _LEVEL_REGISTRY: Dict[str, Type["TransformOperation"]] = {}
+class TransformTask(PipelineTask, type_id="transform"):
+    _LEVEL_REGISTRY: Dict[str, Type["TransformTask"]] = {}
 
-    # Missing init
+    def __init__(self, task_id, **kwargs):
+        super().__init__(task_id, **kwargs)
 
-    def __init_subclass__(cls, type_id, **kwargs):
+    def __init_subclass__(cls, type_id: str, **kwargs):
         super().__init_subclass__(**kwargs)
         if type_id is not None:
             if type_id in cls._LEVEL_REGISTRY:
@@ -14,30 +16,22 @@ class TransformOperation:
             cls._LEVEL_REGISTRY[type_id] = cls
 
     @classmethod
-    def get_level_ops(cls, level: str):
-        """Retrieve transform operation by level"""
+    def get_transform(cls, level: str):
+        """Retrieve transform instance by granularity"""
         if level not in cls._LEVEL_REGISTRY:
             raise ValueError(f"Unknown transform level: {level}")
-        
         return cls._LEVEL_REGISTRY[level]
     
+    @classmethod
     @abstractmethod
-    def register_operation(name: str):
+    def register_operation(cls, name: str):
         ...
 
+    @classmethod
     @abstractmethod
-    def get_operation(name: str):
+    def get_operation(self, name: str):
         ...
 
-
-if __name__ == "__main__":
-    my_task = {
-        "level": "element",
-        "input": ["excel_1_sheet_1"],
-        "steps": [
-            { "op": "cast", "on_error": "fail", "target": { "grant_id": "integer" } }
-        ]
-    }
-    print(TransformOperation._LEVEL_REGISTRY)
-    transform_ops = TransformOperation.get_level_ops(my_task.get("level"))
-    print(transform_ops)
+    # @classmethod
+    # @abstractmethod
+    # def apply_transform_steps(self, )

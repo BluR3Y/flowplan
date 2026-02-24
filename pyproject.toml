@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "batch_etl"
+name = "pipeplan"
 version = "0.1.0"
-description = "A robust, modular Batch ETL library"
+description = "A robust, modular Batch Pipeline library"
 requires-python = ">=3.9"
 dependencies = [
     "pandas>=2.0.0",
@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-etl-run = "batch_etl.cli:main"
+etl-run = "pipeplan.cli:main"
 
 # [project.entry-points."batch_etl.sources"]
 # excel_adapter = "batch_etl.sources.adapters.excel:ExcelAdapter"

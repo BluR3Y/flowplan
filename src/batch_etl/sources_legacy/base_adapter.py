@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, Type
 import pandas as pd
 
-class SourceAdapter:
+class SourceAdapter(ABC):
     _registry: Dict[str, Type["SourceAdapter"]] = {}
 
     def __init__(self, source_cfg: Dict[str, Any]):
