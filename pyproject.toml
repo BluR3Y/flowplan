@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pipeplan"
 version = "0.1.0"
-description = "A robust, modular Batch Pipeline library"
+description = "A robust, comprehensive, and modular Data Pipeline library"
 requires-python = ">=3.9"
 dependencies = [
     "pandas>=2.0.0",

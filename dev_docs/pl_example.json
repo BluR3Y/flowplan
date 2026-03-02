@@ -1,0 +1,71 @@
+{
+  "pipeline_id": "global-sales-v4",
+  "version": "1.2.0",
+  "metadata": {
+    "owner": "data_eng_team",
+    "description": "Aggregates real-time IoT and batch sales data for executive dashboards."
+  },
+  "sources": [
+    {
+      "id": "src_iot_sensors",
+      "type": "api",
+      "format": "json",
+      "endpoint": "https://api.iot-gateway.com",
+      "auth": { "method": "oauth2", "secret_id": "iot_api_token" },
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "id": "src_legacy_db",
+      "type": "database",
+      "engine": "postgresql",
+      "connection_string": "jdbc:postgresql://db-internal:5432/orders",
+      "tables": ["customers", "transactions"]
+    }
+  ],
+  "stages": [
+    {
+      "name": "ingestion_validation",
+      "action": "validate_schema",
+      "params": {
+        "schema_path": "s3://config/schemas/sales_schema.json",
+        "on_failure": "quarantine"
+      }
+    },
+    {
+      "name": "data_transformation",
+      "action": "spark_job",
+      "scripts": ["s3://scripts/transform_iot_payload.py"],
+      "operations": [
+        { "type": "flatten", "target": "metadata.payload" },
+        { "type": "join", "left": "src_iot_sensors", "right": "src_legacy_db", "on": "customer_id" },
+        { "type": "calculate_kpi", "formula": "revenue - tax", "alias": "net_profit" }
+      ]
+    },
+    {
+      "name": "anomaly_detection",
+      "action": "ml_inference",
+      "model": "s3://models/fraud_detection_v2",
+      "threshold": 0.85
+    }
+  ],
+  "destinations": [
+    {
+      "id": "dest_data_warehouse",
+      "type": "snowflake",
+      "table": "analytics.fact_sales",
+      "write_mode": "upsert"
+    },
+    {
+      "id": "dest_dlq",
+      "type": "s3",
+      "path": "s3://quarantine-bucket/failed-records/",
+      "condition": "ingestion_validation.failed == true"
+    }
+  ],
+  "monitoring": {
+    "alerts": [
+      { "type": "slack", "channel": "#data-alerts", "on": ["failure", "delay"] },
+      { "type": "email", "recipient": "oncall@company.com", "on": ["critical_error"] }
+    ]
+  }
+}

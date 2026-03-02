@@ -16,6 +16,7 @@ class Task:
         self,
         id: str,
         action: Callable,
+        params: Dict[str, Any] = {},
         attempts: int = 3,
         retry_delay: float = 1.0,
         backoff_factor: float = 2.0,
@@ -23,6 +24,7 @@ class Task:
     ):
         self.id = id
         self.action = action
+        self.params = params
         self.attempts = attempts
         self.retry_delay = retry_delay
         self.backoff_factor = backoff_factor
@@ -49,8 +51,10 @@ class Task:
 
         while remaining_attempts > 0:
             try:
+                merged_args = dict(**kwargs, **self.params)
+                print(merged_args, args)
                 # Execute action logic
-                self.output = self.action(*args, **kwargs)
+                self.output = self.action(*args, **merged_args)
                 self.status = TaskStatus.COMPLETED
                 break
 

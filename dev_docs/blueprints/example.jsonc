@@ -1,52 +1,92 @@
 {
-    "version": 1.1,
+    "version": "1.0",
+    "pipeline_id": "example-pl",
     "metadata": {
         "description": "Example pipeline configuration demonstrates all core features"
     },
     "timezone": "America/New_York",
     "output": "${FLOWPLAN_OUT}/flowplan_out",
     "resources": {  // Credentials
-        "excel_1_conn": {
-            "adapter": "excel",     // Resource is a 'collection'
+        "excel_1_conn": {   // Resource is a 'collection'
+            "adapter": "file",
             "params": {
+                "format": "excel",
                 "path": "C:/Data/grants_book.xlsx"
             },
             "allow": ["read", "write"]
         },
-        "json_1_conn": {
-            "adapter": "json",  // Resource is a 'set'
+        "json_1_conn": {    // Resource is a 'set'
+            "adapter": "file",
             "params": {
+                "format": "json",
                 "path": "C:/Data/misc_data.json"
+            },
+            "allow": ["read"]
+        },
+        "access_1_conn": {  // Resource is a 'collection'
+            "adapter": "db",
+            "params": {
+                "engine": "access",
+                "path": "C:/Data/grants_db.accdb"
             }
         },
-        "csv_1_conn": {
-            "adapter": "",  // Resource is a 'set'
+        "csv_1_conn": {     // Resource is a 'set'
+            "adapter": "file",
             "params": {
-                "path": "C:/Data/csv_data.csv"
+                "format": "csv",
+                "path": "C:/Data/simple_data.csv"
+            }
+        },
+        "postgre_1_conn": {
+            "adapter": "db",
+            "params": {
+                "engine": "postgres",
+                "uri": "jdbc:postgresql://db-internal:5432/orders"
             }
         }
     },
     "tasks": [
         {
             "task_id": "extract_excel_1_sheet_1",
+            "action": "transfer",
+            // "steps": [
+            //     {
+            //         "op": "extract",
+            //         "params": {
+            //             "resource": "excel_1_conn",
+            //             "collection": "Sheet1",
+            //             "keys": [
+            //                 "grant_id",
+            //                 "Title",
+            //                 "submission_date",
+            //                 "Status"
+            //             ]
+            //         }
+            //     }
+            // ],
+            // "steps": [
+            //     {
+            //         "resource": "excel_1_conn",
+            //         "params": {
+            //             "op": "extract",
+            //             "collection": "Sheet1",
+            //             "keys": [
+            //                 "grant_id",
+            //                 "Title",
+            //                 "submission_date",
+            //                 "Status"
+            //             ]
+            //         }
+            //     }
+            // ],
             "steps": [
-                {
-                    "op": "extract",
-                    "params": {
-                        "resource": "excel_1_conn",
-                        "collection": "Sheet1",
-                        "keys": [
-                            "grant_id",
-                            "Title",
-                            "submission_date",
-                            "Status"
-                        ]
-                    }
-                }
-            ]
+                
+            ],
+            "retry_policy": { "max_attempts": 3, "delay": 30 }
         },
         {
             "task_id": "extract_excel_1_sheet_2",
+            "action": "transfer",
             "steps": [
                 {
                     "op": "extract",
@@ -65,6 +105,7 @@
         },
         {
             "task_id": "extract_access_1_table_1",
+            "action": "transfer",
             "steps": [
                 {
                     "op": "extract",
@@ -85,6 +126,7 @@
         },
         {
             "task_id": "extract_json_1",
+            "action": "transfer",
             "steps": [
                 {
                     "op": "extract",
@@ -97,6 +139,7 @@
         },
         {
             "task_id": "clean_grants",
+            "action": "transform",
             "input": ["extract_excel_1_sheet_1"],
             "steps": [
                 { "op": "label", "params": { "Grant ID": "grant_id", "Project_Title": "title", "Award_No": "award_number" } },
@@ -109,6 +152,7 @@
         },
         {
             "task_id": "order_grants",
+            "action": "transform",
             "input": ["extract_excel_1_sheet_2"],
             "steps": [
                 { "op": "filter", "params": { "AND": [ { "status": { "op": "==", "value": "Active" } }, { "grant_id": { "op": ">=", "value": 100 } } ] } },
@@ -119,6 +163,7 @@
         },
         {
             "task_id": "combine_grants",
+            "action": "transform",
             "input": ["clean_grants", "order_grants"],
             "steps": [
                 { "op": "merge", "params": { "left": "clean_grants", "right": "order_grants", "how": "inner", "on": "grant_id" } },
@@ -127,14 +172,17 @@
         },
         {
             "task_id": "load_clean_grants",
+            "action": "transfer",
             "input": ["combine_grants"],
-            "steps": {
-                "op": "load",
-                "params": {
-                    "resource": "json_1_conn",
-                    "mode": "overwrite"
+            "steps": [
+                {
+                    "op": "load",
+                    "params": {
+                        "resource": "json_1_conn",
+                        "mode": "overwrite"
+                    }
                 }
-            }
+            ]
         }
     ]
 }
